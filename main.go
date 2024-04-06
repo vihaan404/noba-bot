@@ -14,13 +14,21 @@ func main() {
 	bot := discord.CreateNewBot()
 
 	bot.AddHandler(simpleHandler)
-	err := bot.StartDiscordBot()
+	bot.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if h, ok := discord.CommandHandler[i.ApplicationCommandData().Name]; ok {
+			h(s, i)
+		}
+	})
+	registeredCommands, err := bot.StartDiscordBot()
 	if err != nil {
 		slog.Error("discord", err)
 	}
 
 	defer bot.CloseDiscordBot()
 	discord.TerminateOnSignal()
+	bot.DeleteCommands(registeredCommands)
+
+	slog.Info("Gracefully shutting down.")
 }
 
 func bootStrapLocalDev() {
